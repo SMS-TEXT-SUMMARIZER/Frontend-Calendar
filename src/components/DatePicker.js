@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { StyleSheet, View, Button, Text } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import requestSmsPermissions from '../utils/permission';
+import SmsAndroid from 'react-native-get-sms-android';
 import { useContext } from 'react';
 import AppContext from './../context';
 import handlePostRequest from './../api/postRequest';
@@ -17,14 +19,23 @@ const DatePicker = () => {
     setSmsList,
     URL,
     convertFromUnixTimestamp,
+    convertToUnixTimestamp
   } = useContext(AppContext);
 
 
   const [show, setShow] = useState(false)
+  const [mode, setMode] = useState('')
 
   const onStartChange = (e, selectedDate) => {
-    setStartDate(selectedDate);
     setShow(false)
+    setStartDate(selectedDate);
+    
+  };
+
+  const onEndChange = (e, selectedDate) => {
+    setShow(false)
+    setEndDate(selectedDate);
+    
   };
 
 
@@ -33,6 +44,7 @@ const DatePicker = () => {
     if (isRequestSuccessful) {
       setIsRequestSuccessful(false);
       setStartDate(new Date())
+      setEndDate(new Date())
     } else {
 
       const response = await handlePostRequest(URL, smsList);
@@ -42,30 +54,72 @@ const DatePicker = () => {
   };
 
 
-  const showMode = () => {
+  const showMode = (mode) => {
+    setMode(mode)
     setShow(true)
   }
 
+
+  const runOnlyOnce = async () => {
+    await requestSmsPermissions();
+    await fetchSmsMessages();
+  };
+
+  
+
+  const fetchSmsMessages = async () => {
+    const filter = {
+      box: 'inbox',
+      minDate: convertToUnixTimestamp(startDate),
+      maxDate: convertToUnixTimestamp(endDate),
+    };
+    console.log(filter)
+
+    SmsAndroid.list(
+      JSON.stringify(filter),
+      (fail) => {
+        console.log('fail', fail);
+      },
+      (count, smsList) => {
+        const parsedSmsList = JSON.parse(smsList);
+        // console.log('count', count);
+        // console.log('smsList', parsedSmsList);
+        setSmsList(parsedSmsList);
+        setIsRequestSuccessful(false)
+      }
+    );
+  };
+
+  useEffect(() => {
+    setShow(false)
+    runOnlyOnce();
+  }, [startDate, endDate]);
+
+
   return (
     <View style={styles.inputContainer}>
-      <Text style={{ fontSize: 18, color: 'white', padding:5 }}>Choose date range for SMS summary</Text>
-      <Text style={{ fontSize: 18, color: 'white', padding:5}}>
-        {`${startDate.toLocaleDateString('en-GB')}  <===>  ${new Date().toLocaleDateString('en-GB')}`}
+      <Text style={{ fontSize: 18, color: 'white', padding: 5 }}>Choose date range for SMS summary</Text>
+      <Text style={{ fontSize: 18, color: 'white', padding: 5 }}>
+        {`${startDate.toLocaleDateString('en-GB')}  <===>  ${endDate.toLocaleDateString('en-GB')}`}
       </Text>
 
       <View style={{ display: 'flex', gap: 10, flexDirection: 'row', padding: 10 }}>
-        <Button title="Select Start Date" onPress={() => showMode()} />
+        <Button title="Select Start Date" onPress={() => showMode('start')} />
+        <Button title="Select End Date" onPress={() => showMode('end')} />
         {show && (
           <DateTimePicker
-            value={startDate}
+            value={mode=='start'?startDate:endDate}
             mode='date'
+            minimumDate={mode=='end'?startDate:new Date(1950, 1, 1)}
+            maximumDate={ mode=='start'?endDate:new Date()}
             is24Hour={true}
-            onChange={onStartChange}
+            onChange={mode=='start'?onStartChange:onEndChange}
           />
         )}
 
-        <Button title={isRequestSuccessful ? 'Reset' : 'Summarize'} onPress={handleButtonPress} />
+        
       </View>
+      <Button title={isRequestSuccessful ? 'Reset' : 'Summarize'} onPress={handleButtonPress} />
     </View>
   );
 };
@@ -81,7 +135,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 15,
-    height: '20%'
+    height: '25%'
   },
   container: {
     display: 'flex',

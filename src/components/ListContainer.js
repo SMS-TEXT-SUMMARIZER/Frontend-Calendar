@@ -41,7 +41,7 @@ const ListContainer = () =>{
 
 const styles = StyleSheet.create({
     listContainer:{
-        height:'70%',
+        height:'65%',
         display:'flex',
         alignItems:'center'
     },
