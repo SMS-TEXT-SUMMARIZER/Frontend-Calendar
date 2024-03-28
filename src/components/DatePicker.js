@@ -9,6 +9,8 @@ import handlePostRequest from './../api/postRequest';
 
 const DatePicker = () => {
   const {
+    isLoading,
+    setIsLoading,
     startDate,
     setStartDate,
     endDate,
@@ -46,10 +48,11 @@ const DatePicker = () => {
       setStartDate(new Date())
       setEndDate(new Date())
     } else {
-
+      setIsLoading(true);
       const response = await handlePostRequest(URL, smsList);
       setSmsList(response);
       setIsRequestSuccessful(true);
+      setIsLoading(false);
     }
   };
 
@@ -68,6 +71,7 @@ const DatePicker = () => {
   
 
   const fetchSmsMessages = async () => {
+    setIsLoading(true);
     const filter = {
       box: 'inbox',
       minDate: convertToUnixTimestamp(startDate),
@@ -85,7 +89,8 @@ const DatePicker = () => {
         // console.log('count', count);
         // console.log('smsList', parsedSmsList);
         setSmsList(parsedSmsList);
-        setIsRequestSuccessful(false)
+        setIsRequestSuccessful(false);
+        setIsLoading(false);
       }
     );
   };

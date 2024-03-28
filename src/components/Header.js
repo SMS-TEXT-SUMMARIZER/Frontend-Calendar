@@ -9,7 +9,7 @@ const Header = () => {
       <Image
         source={require('../assets/nav-logo.png')}
         style={imageStyle}
-        resizeMode="contain" // Adjust the resizeMode based on your image's aspect ratio
+        resizeMode="contain"
       />
     </View>
   );
@@ -26,8 +26,8 @@ const styles = StyleSheet.create({
     justifyContent:'center'
   },
   imageStyle: {
-    width: '100%', // Adjust the width based on your image's size
-    height: 55, // Adjust the height based on your image's size
+    width: '100%',
+    height: 55,
 
   },
 });
